@@ -1,0 +1,6 @@
+*-key.json
+.env
+.tools/
+target/
+data/
+tmp/

@@ -1,0 +1,12 @@
+{
+  "uuid": "DEMO-ORD-2025-0001", "created_at": "2025-10-01T10:15:00Z",
+  "channel": "mobile_app", "status": "created",
+  "customer": {"id": 7788, "name": "Maria Oliveira", "email": "maria@example.com", "document": "987.654.321-00"},
+  "seller": {"id": 55, "name": "Tech Store", "city": "São Paulo", "state": "SP"},
+  "items": [{"id": 1, "product": {"id": "abc-1344", "title": "televisao bonita"},
+    "unit_price": 2500.00, "quantity": 2,
+    "category": {"id": "ELEC", "name": "Eletrônicos", "sub_category": {"id": "PHONE", "name": "Smartphones"}}}],
+  "shipment": {"carrier": "Correios", "service": "SEDEX", "status": "shipped", "tracking_code": "BR123456789"},
+  "payment": {"method": "pix", "status": "approved", "transaction_id": "pay_987654321"},
+  "metadata": {"source": "app", "user_agent": "Mozilla/5.0...", "ip_address": "10.0.0.1"}
+}
