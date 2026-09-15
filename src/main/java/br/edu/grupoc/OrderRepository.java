@@ -19,6 +19,7 @@ public final class OrderRepository implements AutoCloseable {
             try (var statement = connection.createStatement()) {
                 for (String sql : schema.split(";")) if (!sql.isBlank()) statement.execute(sql);
             }
+            migrateProjections();
         } catch (Exception e) {
             connection.close();
             throw e;
@@ -57,8 +58,9 @@ public final class OrderRepository implements AutoCloseable {
             }
             execute("MERGE INTO cliente (id,nome,email,documento) KEY(id) VALUES (?,?,?,?)",
                     customerId, name, email, document);
-            execute("INSERT INTO pedido (uuid,cliente_id,criado_em,canal,status,payload) VALUES (?,?,?,?,?,?)",
-                    uuid, customerId, created, channel, status, payload);
+            execute("INSERT INTO pedido (uuid,cliente_id,criado_em,canal,status,payload,seller_id,payment_method,projection_version) VALUES (?,?,?,?,?,?,?,?,1)",
+                    uuid, customerId, created, channel, status, payload,
+                    optional(order.getAsJsonObject("seller"), "id"), optional(order.getAsJsonObject("payment"), "method"));
             for (var element : items) {
                 JsonObject item = element.getAsJsonObject();
                 JsonObject product = item.getAsJsonObject("product");
@@ -85,6 +87,22 @@ public final class OrderRepository implements AutoCloseable {
             for (int i = 0; i < values.length; i++) statement.setObject(i + 1, values[i]);
             statement.executeUpdate();
         }
+    }
+
+    private void migrateProjections() throws SQLException {
+        connection.setAutoCommit(false);
+        try (var select = connection.prepareStatement("SELECT uuid,payload FROM pedido WHERE projection_version=0");
+             var rows = select.executeQuery()) {
+            while (rows.next()) {
+                var order = JsonParser.parseString(rows.getString("payload")).getAsJsonObject();
+                execute("UPDATE pedido SET seller_id=?,payment_method=?,projection_version=1 WHERE uuid=? AND projection_version=0",
+                        optional(order.getAsJsonObject("seller"), "id"), optional(order.getAsJsonObject("payment"), "method"), rows.getString("uuid"));
+            }
+            connection.commit();
+        } catch (SQLException | RuntimeException e) {
+            connection.rollback();
+            throw e;
+        } finally { connection.setAutoCommit(true); }
     }
 
     private static String text(JsonObject object, String key) {

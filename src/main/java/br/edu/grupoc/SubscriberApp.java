@@ -24,6 +24,12 @@ public final class SubscriberApp {
     public static void main(String[] args) {
         try {
             run(args);
+        } catch (java.net.BindException e) {
+            String port = System.getenv().getOrDefault("ORDERS_API_PORT", "8080");
+            System.err.println("Nao foi possivel iniciar a API: a porta " + port + " esta ocupada ou indisponivel.");
+            System.err.println("Se a API ja estiver aberta, use http://127.0.0.1:" + port + "/orders");
+            System.err.println("Ou escolha outra porta no PowerShell: $env:ORDERS_API_PORT = '8081'");
+            System.exit(1);
         } catch (Exception e) {
             // Nao imprime credenciais ou respostas de autenticacao.
             System.err.println("Falha (" + e.getClass().getSimpleName()
@@ -33,6 +39,10 @@ public final class SubscriberApp {
     }
 
     private static void run(String[] args) throws Exception {
+        if (args.length == 1 && args[0].equals("--api")) {
+            OrdersApi.run();
+            return;
+        }
         if (args.length == 1 && java.util.Set.of("--pedidos", "--demo-pedidos", "--listar-pedidos").contains(args[0])) {
             OrderConsumer.run(args[0]);
             return;
@@ -44,7 +54,7 @@ public final class SubscriberApp {
                 case "--receber" -> receive = true;
                 case "--confirmar" -> acknowledge = true;
                 case "--help" -> {
-                    System.out.println("Uso: SubscriberApp [--receber [--confirmar]]");
+                    System.out.println("Uso: SubscriberApp --api | --pedidos | --listar-pedidos | --demo-pedidos | [--receber [--confirmar]]");
                     return;
                 }
                 default -> throw new IllegalArgumentException("Argumento desconhecido");
@@ -120,7 +130,7 @@ public final class SubscriberApp {
             return future.get(25, TimeUnit.SECONDS);
         } catch (TimeoutException | InterruptedException e) {
             future.cancel(true);
-            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            if (e instanceof InterruptedExceptio) Thread.currentThread().interrupt();
             throw e;
         }
     }

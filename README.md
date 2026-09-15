@@ -1,5 +1,19 @@
 # Pub/Sub em Java — Grupo C
 
+## Trabalho — Questão 2: API de pedidos
+
+Na pasta do projeto, execute:
+
+```powershell
+.\executar.ps1 -Api
+```
+
+Em outro PowerShell, na mesma pasta, execute `.\executar.ps1 -Pedidos` para receber pedidos enquanto a API funciona. Antes de usar esta versão pela primeira vez, encerre as execuções antigas com Ctrl+C e reinicie ambas.
+
+Abra `http://127.0.0.1:8080/orders`. Consulte [rotas, filtros e exemplos](docs/questao-2.md).
+
+A API consulta o mesmo banco local da questão 1 e não precisa da credencial Google. No clone do GitHub, instale JDK 17+ e Maven; as ferramentas e o banco da pasta original não são publicados.
+
 ## Trabalho — Questão 1
 
 O consumidor de pedidos com persistência relacional está implementado. Consulte [instruções e DER](docs/questao-1.md).

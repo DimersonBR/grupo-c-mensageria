@@ -23,3 +23,11 @@ CREATE TABLE IF NOT EXISTS item_pedido (
  subcategoria_id VARCHAR(100), subcategoria_nome VARCHAR(500),
  PRIMARY KEY (pedido_uuid, id)
 );
+ALTER TABLE pedido ADD COLUMN IF NOT EXISTS seller_id VARCHAR(100);
+ALTER TABLE pedido ADD COLUMN IF NOT EXISTS payment_method VARCHAR(100);
+ALTER TABLE pedido ADD COLUMN IF NOT EXISTS projection_version INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_pedido_data ON pedido(criado_em DESC, uuid);
+CREATE INDEX IF NOT EXISTS idx_pedido_cliente_data ON pedido(cliente_id, criado_em DESC, uuid);
+CREATE INDEX IF NOT EXISTS idx_pedido_seller_data ON pedido(seller_id, criado_em DESC, uuid);
+CREATE INDEX IF NOT EXISTS idx_pedido_status_data ON pedido(status, criado_em DESC, uuid);
+CREATE INDEX IF NOT EXISTS idx_item_produto_pedido ON item_pedido(produto_id, pedido_uuid);

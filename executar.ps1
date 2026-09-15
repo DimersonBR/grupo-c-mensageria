@@ -1,4 +1,4 @@
-param([switch]$Receber, [switch]$Confirmar, [switch]$Pedidos, [switch]$DemoPedidos, [switch]$ListarPedidos, [switch]$Testar)
+param([switch]$Receber, [switch]$Confirmar, [switch]$Pedidos, [switch]$DemoPedidos, [switch]$ListarPedidos, [switch]$Testar, [switch]$Api)
 $ErrorActionPreference = 'Stop'
 Push-Location $PSScriptRoot
 try {
@@ -7,6 +7,7 @@ try {
     $maven = "$PSScriptRoot/.tools/apache-maven-3.9.11/bin/mvn.cmd"
     if (-not (Test-Path -LiteralPath $maven)) { $maven = 'mvn' }
     $appArgs = @()
+    if ($Api) { $appArgs += '--api' }
     if ($Receber) { $appArgs += '--receber' }
     if ($Confirmar) { $appArgs += '--confirmar' }
     if ($Pedidos) { $appArgs += '--pedidos' }

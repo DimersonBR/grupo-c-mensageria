@@ -10,7 +10,7 @@ import java.nio.file.Path;
 
 public final class OrderConsumer {
     public static void run(String mode) throws Exception {
-        String url = System.getenv().getOrDefault("ORDERS_DB_URL", "jdbc:h2:file:./data/pedidos;WRITE_DELAY=0");
+        String url = Database.url();
         try (var repository = new OrderRepository(url)) {
             if (mode.equals("--listar-pedidos")) { repository.list(); return; }
             if (mode.equals("--demo-pedidos")) {

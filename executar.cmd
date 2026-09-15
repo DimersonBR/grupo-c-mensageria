@@ -8,6 +8,8 @@ if exist "%~dp0.tools\apache-maven-3.9.11\bin\mvn.cmd" set "MAVEN=%~dp0.tools\ap
 set "APP_ARGS="
 :parse
 if "%~1"=="" goto run
+if /i "%~1"=="-Api" goto api
+if /i "%~1"=="--api" goto api
 if /i "%~1"=="-Receber" goto receive
 if /i "%~1"=="--receber" goto receive
 if /i "%~1"=="-Confirmar" goto confirm
@@ -18,6 +20,10 @@ popd
 exit /b 2
 :receive
 set "APP_ARGS=%APP_ARGS% --receber"
+shift
+goto parse
+:api
+set "APP_ARGS=%APP_ARGS% --api"
 shift
 goto parse
 :confirm
