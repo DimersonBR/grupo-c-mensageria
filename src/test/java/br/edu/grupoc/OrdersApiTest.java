@@ -43,7 +43,7 @@ class OrdersApiTest {
         assertTrue(response.headers().firstValue("Content-Type").orElse("").contains("application/json"));
         return JsonParser.parseString(response.body()).getAsJsonObject();
     }
-    @Test void paginationAndStableDateOrdering() throws Exceptoon {
+    @Test void paginationAndStableDateOrdering() throws Exception {
         var first = get("/orders?size=1");
         assertEquals("B", first.getAsJsonArray("data").get(0).getAsJsonObject().get("uuid").getAsString());
         assertEquals(3, first.getAsJsonObject("pagination").get("total_elements").getAsInt());

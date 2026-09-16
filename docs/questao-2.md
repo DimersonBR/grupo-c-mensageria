@@ -25,7 +25,7 @@ Invoke-RestMethod 'http://127.0.0.1:8080/orders/financial-summary' | ConvertTo-J
 
 Para outra porta, defina `$env:ORDERS_API_PORT = '8081'` antes de iniciar. `ORDERS_DB_URL` permite selecionar outro banco H2. Não são necessárias credenciais do Google para consultar dados locais.
 
-No clone sem ferramentas locais, com JDK 17+ e Maven configurados:
+No clone sem ferramentas locais, com JDK 25+ e Maven configurados:
 
 ```powershell
 mvn compile exec:java "-Dexec.args=--api"
@@ -102,4 +102,4 @@ O resumo agrega valores no banco, sem desserializar todos os payloads. Cada pedi
 
 Os testes também verificam a migração de um banco antigo, sua reexecução sem alterar dados, o acesso por dois processos Java e a leitura HTTP de pedidos inseridos pelo segundo processo. Nenhum desses testes usa os pedidos reais ou acessa o Pub/Sub.
 
-Referência técnica: [servidor HTTP do Java](https://docs.oracle.com/en/java/javase/17/docs/api/jdk.httpserver/com/sun/net/httpserver/HttpServer.html).
+Referência técnica: [servidor HTTP do Java](https://docs.oracle.com/en/java/javase/25/docs/api/jdk.httpserver/com/sun/net/httpserver/HttpServer.html).

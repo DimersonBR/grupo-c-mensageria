@@ -130,7 +130,7 @@ public final class SubscriberApp {
             return future.get(25, TimeUnit.SECONDS);
         } catch (TimeoutException | InterruptedException e) {
             future.cancel(true);
-            if (e instanceof InterruptedExceptio) Thread.currentThread().interrupt();
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             throw e;
         }
     }

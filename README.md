@@ -12,7 +12,7 @@ Em outro PowerShell, na mesma pasta, execute `.\executar.ps1 -Pedidos` para rece
 
 Abra `http://127.0.0.1:8080/orders`. Consulte [rotas, filtros e exemplos](docs/questao-2.md).
 
-A API consulta o mesmo banco local da questão 1 e não precisa da credencial Google. No clone do GitHub, instale JDK 17+ e Maven; as ferramentas e o banco da pasta original não são publicados.
+A API consulta o mesmo banco local da questão 1 e não precisa da credencial Google. No clone do GitHub, instale JDK 25+ e Maven; as ferramentas e o banco da pasta original não são publicados.
 
 ## Trabalho — Questão 1
 
@@ -60,7 +60,7 @@ Confirma as mensagens após exibi-las; elas deixam de aguardar entrega nesta ass
 
 ## Recriar o ambiente em outro computador
 
-Com JDK 17 ou superior e Maven instalados, configure `JAVA_HOME` para o JDK e execute na raiz do projeto:
+Com JDK 25 ou superior e Maven instalados, configure `JAVA_HOME` para o JDK e execute na raiz do projeto:
 
 ```powershell
 mvn compile exec:java
@@ -69,6 +69,6 @@ mvn compile exec:java "-Dexec.args=--receber"
 
 Mantenha `sa-grupo-c-key.json` nesta pasta. O programa lê a credencial diretamente, sem exigir gcloud ou variável de ambiente. A chave está excluída pelo `.gitignore`; não a publique.
 
-Na IDE (IntelliJ, Eclipse ou VS Code), importe `pom.xml` como projeto Maven, selecione JDK 17+ e execute `br.edu.grupoc.SubscriberApp` com o diretório de trabalho na raiz do projeto. Sem argumentos, apenas testa o acesso; `--receber` consulta mensagens e `--receber --confirmar` também confirma o consumo.
+Na IDE (IntelliJ, Eclipse ou VS Code), importe `pom.xml` como projeto Maven, selecione JDK 25+ e execute `br.edu.grupoc.SubscriberApp` com o diretório de trabalho na raiz do projeto. Sem argumentos, apenas testa o acesso; `--receber` consulta mensagens e `--receber --confirmar` também confirma o consumo.
 
 Referência: [teste de permissões do Google Pub/Sub](https://cloud.google.com/pubsub/docs/samples/pubsub-test-subscription-permissions?hl=pt-BR).
