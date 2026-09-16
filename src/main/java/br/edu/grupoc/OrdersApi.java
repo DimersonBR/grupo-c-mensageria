@@ -36,7 +36,8 @@ public final class OrdersApi implements AutoCloseable {
     public static void run() throws Exception {
         String url = Database.url();
         // Atualiza o esquema e mantem a conexao proprietaria do AUTO_SERVER aberta.
-        try (var repository = new OrderRepository(url)) {
+        var repository = new OrderRepository(url);
+        try (repository) {
             int port = Integer.parseInt(System.getenv().getOrDefault("ORDERS_API_PORT", "8080"));
             var api = new OrdersApi(url, port);
             Runtime.getRuntime().addShutdownHook(new Thread(api::close));

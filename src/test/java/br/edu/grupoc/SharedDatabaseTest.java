@@ -41,7 +41,8 @@ class SharedDatabaseTest {
                 assertFalse(repository.save(sample("second")));
             } finally { if (process.isAlive()) { process.destroyForcibly(); process.waitFor(5,TimeUnit.SECONDS); } }
         }
-        try (var reopened = new OrderRepository(url)) {
+        var reopened = new OrderRepository(url);
+        try (reopened) {
             assertEquals(2,new OrderQueries(url).page(Map.of(),1,20,"created_at,desc").getAsJsonObject("pagination").get("total_elements").getAsInt());
         }
     }
@@ -73,7 +74,8 @@ class SharedDatabaseTest {
             statement.execute("INSERT INTO item_pedido(pedido_uuid,id,produto_id,preco_unitario,quantidade) VALUES ('legacy-order','1','abc-1344',2500,2)");
         }
         for (int i=0;i<2;i++) {
-            try (var repository = new OrderRepository(url)) {
+            var repository = new OrderRepository(url);
+            try (repository) {
                 var result = new OrderQueries(url).summary(Map.of("seller.id","55"),null,null);
                 assertEquals(1,result.get("total_orders").getAsInt());
                 assertEquals(1,result.getAsJsonObject("by_payment_method").getAsJsonObject("pix").get("count").getAsInt());

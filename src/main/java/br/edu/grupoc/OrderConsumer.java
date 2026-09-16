@@ -1,6 +1,5 @@
 package br.edu.grupoc;
 
-import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 
 
