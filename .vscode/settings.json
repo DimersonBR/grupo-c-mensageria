@@ -6,5 +6,6 @@
             "path": "C:\\Users\\dimer\\.jdk\\jdk-25.0.2",
             "default": true
         }
-    ]
+    ],
+    "java.compile.nullAnalysis.mode": "automatic"
 }
