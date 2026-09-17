@@ -1,74 +1,67 @@
 # Pub/Sub em Java — Grupo C
 
-## Trabalho — Questão 2: API de pedidos
+Consumidor de pedidos (questão 1) e API REST de consulta (questão 2), em Java 17 com H2 e Google Cloud Pub/Sub.
 
-Na pasta do projeto, execute:
+## Começar agora
+
+Requisito único: **JDK 17 ou superior**. O Maven vem no repositório pelo wrapper (`mvnw.cmd`) e é baixado na primeira execução.
+
+```powershell
+.\executar.ps1 -Semear          # popula o banco local com pedidos ficticios
+.\executar.ps1 -ListarPedidos   # confere os pedidos gravados
+.\executar.ps1 -Api             # sobe a API em http://127.0.0.1:8080/orders
+.\executar.ps1 -Testar          # roda os testes
+```
+
+Se o PowerShell bloquear scripts, use `.\executar.cmd` com as mesmas opções. Guia completo, lista de comandos e solução dos erros mais comuns: [docs/como-rodar.md](docs/como-rodar.md).
+
+Nada disso precisa de conta Google: os dados fictícios passam pelas mesmas validações e transações do consumidor real. A credencial (`sa-grupo-c-key.json`) só é necessária para `-Pedidos` e `-Receber`, que acessam a assinatura de verdade, e não é publicada no repositório.
+
+## Trabalho — Questão 2: API de pedidos
 
 ```powershell
 .\executar.ps1 -Api
 ```
 
-Em outro PowerShell, na mesma pasta, execute `.\executar.ps1 -Pedidos` para receber pedidos enquanto a API funciona. Antes de usar esta versão pela primeira vez, encerre as execuções antigas com Ctrl+C e reinicie ambas.
-
-Abra `http://127.0.0.1:8080/orders`. Consulte [rotas, filtros e exemplos](docs/questao-2.md).
-
-A API consulta o mesmo banco local da questão 1 e não precisa da credencial Google. No clone do GitHub, instale JDK 17+ e Maven; as ferramentas e o banco da pasta original não são publicados.
+Em outro PowerShell, na mesma pasta, execute `.\executar.ps1 -Pedidos` (ou `-Semear`) para gravar pedidos enquanto a API funciona. Abra `http://127.0.0.1:8080/orders`. Consulte [rotas, filtros e exemplos](docs/questao-2.md).
 
 ## Trabalho — Questão 1
 
 O consumidor de pedidos com persistência relacional está implementado. Consulte [instruções e DER](docs/questao-1.md).
 
 ```powershell
+.\executar.ps1 -Semear
 .\executar.ps1 -DemoPedidos
 .\executar.ps1 -ListarPedidos
 .\executar.ps1 -Pedidos
 ```
 
-`-Pedidos` salva os pedidos e confirma automaticamente apenas após a gravação. Os comandos antigos abaixo continuam destinados à inspeção de mensagens.
+`-Pedidos` salva os pedidos e confirma automaticamente apenas após a gravação.
 
-Projeto: `serjava-demo`  
-Assinatura: `projects/serjava-demo/subscriptions/grupo-c`  
+Projeto: `serjava-demo`
+Assinatura: `projects/serjava-demo/subscriptions/grupo-c`
 Tópico informado: `projects/serjava-demo/topics/aula-pub`
-
-Projeto Maven com a biblioteca oficial `google-cloud-pubsub`. O JDK 21 e o Maven foram preparados em `.tools`. Execute os comandos no PowerShell, nesta pasta.
-
-Use `executar.cmd`: ele chama o Maven diretamente e não exige habilitar scripts PowerShell.
 
 Código principal: `src/main/java/br/edu/grupoc/SubscriberApp.java`.
 
-## Testar acesso sem ler mensagens
+## Inspecionar a assinatura sem persistir
 
 ```powershell
-.\executar.cmd
+.\executar.ps1                       # testa o acesso, sem ler mensagens
+.\executar.ps1 -Receber              # exibe ate 10 mensagens e as devolve a fila
+.\executar.ps1 -Receber -Confirmar   # exibe e confirma o consumo
 ```
 
-## Receber até 10 mensagens sem confirmar
+Cada chamada aguarda até 25 segundos. Um resultado vazio não garante que a fila esteja vazia. Esses comandos exigem `sa-grupo-c-key.json` na raiz do projeto; o arquivo está no `.gitignore` e não deve ser publicado.
+
+## Executar sem os scripts
 
 ```powershell
-.\executar.cmd -Receber
+.\mvnw.cmd compile exec:java "-Dexec.args=--semear 50"
+.\mvnw.cmd compile exec:java "-Dexec.args=--api"
+.\mvnw.cmd test
 ```
 
-Exibe um lote e libera as mensagens para nova entrega. Cada chamada aguarda até 25 segundos. Um resultado vazio não garante que toda a fila esteja vazia.
-
-## Receber e confirmar
-
-```powershell
-.\executar.cmd -Receber -Confirmar
-```
-
-Confirma as mensagens após exibi-las; elas deixam de aguardar entrega nesta assinatura. Use quando quiser concluir o consumo.
-
-## Recriar o ambiente em outro computador
-
-Com JDK 17 ou superior e Maven instalados, configure `JAVA_HOME` para o JDK e execute na raiz do projeto:
-
-```powershell
-mvn compile exec:java
-mvn compile exec:java "-Dexec.args=--receber"
-```
-
-Mantenha `sa-grupo-c-key.json` nesta pasta. O programa lê a credencial diretamente, sem exigir gcloud ou variável de ambiente. A chave está excluída pelo `.gitignore`; não a publique.
-
-Na IDE (IntelliJ, Eclipse ou VS Code), importe `pom.xml` como projeto Maven, selecione JDK 17+ e execute `br.edu.grupoc.SubscriberApp` com o diretório de trabalho na raiz do projeto. Sem argumentos, apenas testa o acesso; `--receber` consulta mensagens e `--receber --confirmar` também confirma o consumo.
+Na IDE (IntelliJ, Eclipse ou VS Code), importe `pom.xml` como projeto Maven, selecione JDK 17+ e execute `br.edu.grupoc.SubscriberApp` com o diretório de trabalho na raiz do projeto.
 
 Referência: [teste de permissões do Google Pub/Sub](https://cloud.google.com/pubsub/docs/samples/pubsub-test-subscription-permissions?hl=pt-BR).

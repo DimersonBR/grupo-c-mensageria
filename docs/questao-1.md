@@ -7,6 +7,9 @@ O consumidor recebe JSON do Google Cloud Pub/Sub e persiste os pedidos em H2, um
 ## Executar no PowerShell
 
 ```powershell
+# Popula o banco com uma base de pedidos fictícios, sem acessar a fila nem usar credencial
+.\executar.ps1 -Semear -Quantidade 50
+
 # Demonstra a persistência local com um pedido fictício, sem acessar a fila
 .\executar.ps1 -DemoPedidos
 
@@ -19,6 +22,8 @@ O consumidor recebe JSON do Google Cloud Pub/Sub e persiste os pedidos em H2, um
 # Executa os testes automatizados
 .\executar.ps1 -Testar
 ```
+
+Instalação, requisitos e erros comuns estão em [como rodar o projeto](como-rodar.md). Repetir `-Semear` com a mesma quantidade e semente não duplica pedidos: os UUIDs gerados são estáveis e a deduplicação por UUID impede a segunda gravação.
 
 Use Ctrl+C para encerrar o consumidor. A assinatura padrão é `projects/serjava-demo/subscriptions/grupo-c`. Se o professor fornecer outra assinatura para pedidos, configure antes de executar:
 

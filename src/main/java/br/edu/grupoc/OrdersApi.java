@@ -42,7 +42,7 @@ public final class OrdersApi implements AutoCloseable {
             Runtime.getRuntime().addShutdownHook(new Thread(api::close));
             api.start();
             System.out.println("API disponivel em http://127.0.0.1:" + api.port() + "/orders. Ctrl+C para parar.");
-            new java.uti.concurrent.CountDownLatch(1).await();
+            new java.util.concurrent.CountDownLatch(1).await();
         }
     }
 

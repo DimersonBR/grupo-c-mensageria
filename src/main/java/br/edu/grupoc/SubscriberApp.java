@@ -8,9 +8,6 @@ import com.google.cloud.pubsub.v1.SubscriptionAdminSettings;
 import com.google.iam.v1.TestIamPermissionsRequest;
 import com.google.pubsub.v1.PullRequest;
 import com.google.pubsub.v1.PullResponse;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +27,9 @@ public final class SubscriberApp {
             System.err.println("Se a API ja estiver aberta, use http://127.0.0.1:" + port + "/orders");
             System.err.println("Ou escolha outra porta no PowerShell: $env:ORDERS_API_PORT = '8081'");
             System.exit(1);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.err.println(e.getMessage() == null ? "Argumento invalido." : e.getMessage());
+            System.exit(1);
         } catch (Exception e) {
             // Nao imprime credenciais ou respostas de autenticacao.
             System.err.println("Falha (" + e.getClass().getSimpleName()
@@ -43,8 +43,8 @@ public final class SubscriberApp {
             OrdersApi.run();
             return;
         }
-        if (args.length == 1 && java.util.Set.of("--pedidos", "--demo-pedidos", "--listar-pedidos").contains(args[0])) {
-            OrderConsumer.run(args[0]);
+        if (args.length >= 1 && java.util.Set.of("--pedidos", "--demo-pedidos", "--listar-pedidos", "--semear").contains(args[0])) {
+            OrderConsumer.run(args[0], java.util.Arrays.copyOfRange(args, 1, args.length));
             return;
         }
         boolean receive = false;
@@ -54,7 +54,8 @@ public final class SubscriberApp {
                 case "--receber" -> receive = true;
                 case "--confirmar" -> acknowledge = true;
                 case "--help" -> {
-                    System.out.println("Uso: SubscriberApp --api | --pedidos | --listar-pedidos | --demo-pedidos | [--receber [--confirmar]]");
+                    System.out.println("Uso: SubscriberApp --api | --pedidos | --listar-pedidos | --demo-pedidos"
+                            + " | --semear [quantidade] [semente] | [--receber [--confirmar]]");
                     return;
                 }
                 default -> throw new IllegalArgumentException("Argumento desconhecido");
@@ -65,10 +66,7 @@ public final class SubscriberApp {
             throw new IllegalArgumentException();
         }
 
-        ServiceAccountCredentials credentials;
-        try (InputStream input = Files.newInputStream(Path.of("sa-grupo-c-key.json"))) {
-            credentials = ServiceAccountCredentials.fromStream(input);
-        }
+        ServiceAccountCredentials credentials = Credentials.load();
         SubscriptionAdminSettings settings = SubscriptionAdminSettings.newBuilder()
                 .setCredentialsProvider(FixedCredentialsProvider.create(credentials)).build();
         try (SubscriptionAdminClient client = SubscriptionAdminClient.create(settings)) {
@@ -130,7 +128,7 @@ public final class SubscriberApp {
             return future.get(25, TimeUnit.SECONDS);
         } catch (TimeoutException | InterruptedException e) {
             future.cancel(true);
-            if (e instanceof InterruptedExceptio) Thread.currentThread().interrupt();
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
             throw e;
         }
     }

@@ -4,11 +4,13 @@ Implementação com o servidor HTTP do JDK, Gson e JDBC/H2. As respostas usam JS
 
 ## Iniciar
 
-Na pasta `Projeto 1`, execute:
+Na pasta do projeto, execute:
 
 ```powershell
 .\executar.ps1 -Api
 ```
+
+Para consultar com dados, rode antes `.\executar.ps1 -Semear`, que popula o banco local com pedidos fictícios sem exigir credencial do Google. Requisitos e erros comuns estão em [como rodar o projeto](como-rodar.md).
 
 O H2 usa `AUTO_SERVER=TRUE`, permitindo acesso ao mesmo arquivo por processos separados. Em outro PowerShell, na mesma pasta, execute `.\executar.ps1 -Pedidos`: os pedidos gravados ficam disponíveis nas próximas consultas da API. A API mantém uma conexão aberta durante a execução para manter estável o servidor automático do H2.
 
@@ -25,10 +27,10 @@ Invoke-RestMethod 'http://127.0.0.1:8080/orders/financial-summary' | ConvertTo-J
 
 Para outra porta, defina `$env:ORDERS_API_PORT = '8081'` antes de iniciar. `ORDERS_DB_URL` permite selecionar outro banco H2. Não são necessárias credenciais do Google para consultar dados locais.
 
-No clone sem ferramentas locais, com JDK 17+ e Maven configurados:
+Sem os scripts, com JDK 17+ instalado:
 
 ```powershell
-mvn compile exec:java "-Dexec.args=--api"
+.\mvnw.cmd compile exec:java "-Dexec.args=--api"
 ```
 
 O banco original permanece em `Projeto 1/data/pedidos.mv.db`. Executar no clone usa outro banco, inicialmente vazio. Para ler o original pelo clone, defina `ORDERS_DB_URL` com a URL JDBC absoluta do banco original, sem o sufixo `.mv.db`.
