@@ -65,3 +65,12 @@ Cada chamada aguarda até 25 segundos. Um resultado vazio não garante que a fil
 Na IDE (IntelliJ, Eclipse ou VS Code), importe `pom.xml` como projeto Maven, selecione JDK 17+ e execute `br.edu.grupoc.SubscriberApp` com o diretório de trabalho na raiz do projeto.
 
 Referência: [teste de permissões do Google Pub/Sub](https://cloud.google.com/pubsub/docs/samples/pubsub-test-subscription-permissions?hl=pt-BR).
+
+## Equipe
+
+| Integrante |
+|------------|
+| Vitor Siqueira Simeao |
+| Uriel Monte Paz de Araujo |
+| Gabriel Aleixo |
+| Dimerson Ferreira |
