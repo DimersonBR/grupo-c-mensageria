@@ -21,7 +21,11 @@ final class OrderQueries {
     }
 
     JsonObject page(Map<String,String> filters, int page, int size, String sort) throws SQLException {
-        Filter where = filter(filters, null, null);
+        return page(filters, page, size, sort, null, null);
+    }
+
+    JsonObject page(Map<String,String> filters, int page, int size, String sort, Instant start, Instant end) throws SQLException {
+        Filter where = filter(filters, start, end);
         try (var connection = connect()) {
             long count;
             try (var statement = prepare(connection, "SELECT COUNT(*) FROM pedido p" + where.sql, where.values);

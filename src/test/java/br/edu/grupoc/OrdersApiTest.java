@@ -59,6 +59,16 @@ class OrdersApiTest {
         assertEquals(1, get("/orders?customer.id=1&seller.id=55&status=paid&product.id=produto-A").getAsJsonArray("data").size());
         assertEquals(0, get("/orders?customer.id=999").getAsJsonArray("data").size());
     }
+    @Test void ordersCanBeFilteredByDateOrTimestamp() throws Exception {
+        var day = get("/orders?start_date=2026-09-02&end_date=2026-09-02&sort=created_at,asc");
+        assertEquals(2, day.getAsJsonArray("data").size());
+        assertEquals(2, day.getAsJsonObject("pagination").get("total_elements").getAsInt());
+        assertEquals("B", day.getAsJsonArray("data").get(0).getAsJsonObject().get("uuid").getAsString());
+
+        var instant = get("/orders?start_date=2026-09-01T10:00:00Z&end_date=2026-09-01T10:00:00Z");
+        assertEquals(1, instant.getAsJsonArray("data").size());
+        assertEquals("A", instant.getAsJsonArray("data").get(0).getAsJsonObject().get("uuid").getAsString());
+    }
     @Test void detailAndItemsPreservePayloadAndComputeTotals() throws Exception {
         var order = get("/orders/A");
         assertEquals(new BigDecimal("20.50"), order.get("total").getAsBigDecimal());
@@ -89,7 +99,8 @@ class OrdersApiTest {
     }
     @Test void errorsAreJsonAndHaveCorrectHttpStatus() throws Exception {
         for (String path : new String[]{"/orders?page=0", "/orders?size=101", "/orders?sort=bad", "/orders?page=x",
-                "/orders?page=1&page=2", "/orders?foo=1", "/orders/financial-summary?start_date=bad",
+                "/orders?page=1&page=2", "/orders?foo=1", "/orders?start_date=bad",
+                "/orders?start_date=2026-09-03&end_date=2026-09-01", "/orders/financial-summary?start_date=bad",
                 "/orders/financial-summary?start_date=2026-09-03&end_date=2026-09-01"})
             assertEquals(400, request(path).statusCode(), path);
         assertEquals(404, request("/orders/missing").statusCode());

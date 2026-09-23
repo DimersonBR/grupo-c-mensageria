@@ -54,7 +54,7 @@ Se o PowerShell bloquear scripts (`execução de scripts foi desabilitada neste 
 | `.\executar.ps1 -ListarPedidos` | Lista pedidos, itens e totais gravados |
 | `.\executar.ps1 -DemoPedidos` | Grava o pedido de exemplo de `src/main/resources/pedido-exemplo.json` |
 | `.\executar.ps1 -Api` | Sobe a API REST de leitura |
-| `.\executar.ps1 -Testar` | Roda os 13 testes automatizados |
+| `.\executar.ps1 -Testar` | Roda os 14 testes automatizados |
 | `.\executar.ps1 -Pedidos` | Consome a assinatura real do Pub/Sub e grava os pedidos (exige credencial) |
 | `.\executar.ps1 -Receber [-Confirmar]` | Lê mensagens da assinatura sem persistir (exige credencial) |
 

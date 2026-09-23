@@ -57,10 +57,14 @@ Os números do exemplo de paginação são ilustrativos. Cliente, seller, produt
 | `product.id` | Pedidos que contenham o produto; retorna o pedido com todos os seus itens |
 | `seller.id` | Igualdade exata com o ID do vendedor |
 | `status` | Igualdade exata com o status recebido |
+| `start_date` | Início inclusivo do intervalo de `created_at` |
+| `end_date` | Fim inclusivo do intervalo de `created_at` |
 
-Filtros combinam-se por AND. Datas iguais são desempatas pelo UUID crescente, garantindo paginação determinística. Página além do último resultado retorna lista vazia e mantém os metadados.
+Filtros combinam-se por AND. `start_date` e `end_date` aceitam uma data `YYYY-MM-DD`, que representa o dia inteiro em UTC, ou um timestamp ISO 8601 com fuso. Em URLs, codifique o sinal `+` do fuso como `%2B`. Datas iguais são desempatas pelo UUID crescente, garantindo paginação determinística. Página além do último resultado retorna lista vazia e mantém os metadados.
 
 Exemplo: `/orders?customer.id=7788&seller.id=55&status=created&page=1&size=10`.
+
+Pedidos de um dia específico: `/orders?start_date=2026-09-02&end_date=2026-09-02`.
 
 ## Resumo financeiro
 

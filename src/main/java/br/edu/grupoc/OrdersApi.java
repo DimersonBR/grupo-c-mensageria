@@ -58,7 +58,8 @@ public final class OrdersApi implements AutoCloseable {
                 boolean summary = path.endsWith("financial-summary");
                 Set<String> allowed = summary
                         ? Set.of("seller.id", "start_date", "end_date")
-                        : Set.of("customer.id", "product.id", "seller.id", "status", "page", "size", "sort");
+                        : Set.of("customer.id", "product.id", "seller.id", "status", "start_date", "end_date",
+                                "page", "size", "sort");
                 if (!allowed.containsAll(query.keySet())) throw new IllegalArgumentException("Parametro desconhecido para esta rota.");
                 Instant start = boundary(query.get("start_date"), false);
                 Instant end = boundary(query.get("end_date"), true);
@@ -70,7 +71,9 @@ public final class OrdersApi implements AutoCloseable {
                 if (!Set.of("created_at,asc", "created_at,desc").contains(sort))
                     throw new IllegalArgumentException("sort deve ser created_at,asc ou created_at,desc.");
                 var queries = new OrderQueries(databaseUrl);
-                send(exchange, 200, summary ? queries.summary(query, start, end) : queries.page(query, page, size, sort));
+                send(exchange, 200, summary
+                        ? queries.summary(query, start, end)
+                        : queries.page(query, page, size, sort, start, end));
                 return;
             }
             String[] parts = path.split("/", -1);
