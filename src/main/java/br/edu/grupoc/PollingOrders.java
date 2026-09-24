@@ -14,6 +14,7 @@ final class PollingOrders {
     static void run(OrderRepository repository, ServiceAccountCredentials credentials, String subscription) throws Exception {
         var settings = SubscriptionAdminSettings.newBuilder()
                 .setCredentialsProvider(FixedCredentialsProvider.create(credentials));
+        // Os retries automaticos sao desligados para que o laco controle espera e mensagens de erro.
         settings.pullSettings().setRetryableCodes(java.util.Set.of());
         settings.pullSettings().setRetrySettings(settings.pullSettings().getRetrySettings().toBuilder()
                 .setInitialRpcTimeoutDuration(Duration.ofSeconds(25))
@@ -24,6 +25,7 @@ final class PollingOrders {
             while (!Thread.currentThread().isInterrupted()) {
                 PullResponse response;
                 try {
+                    // Uma mensagem por vez simplifica o limite de ACK e a transacao no banco.
                     response = client.pull(PullRequest.newBuilder().setSubscription(subscription).setMaxMessages(1).build());
                 } catch (ApiException e) {
                     var code = e.getStatusCode().getCode();
@@ -45,10 +47,12 @@ final class PollingOrders {
                 for (var received : response.getReceivedMessagesList()) {
                     boolean saved = false;
                     try {
+                        // Reserva tempo suficiente para validar e gravar o pedido antes do ACK.
                         await(client.modifyAckDeadlineCallable().futureCall(ModifyAckDeadlineRequest.newBuilder()
                                 .setSubscription(subscription).addAckIds(received.getAckId()).setAckDeadlineSeconds(120).build()));
                         boolean inserted = repository.save(received.getMessage().getData().toStringUtf8());
                         saved = true;
+                        // O ACK so e enviado depois que a transacao local foi confirmada.
                         await(client.acknowledgeCallable().futureCall(AcknowledgeRequest.newBuilder()
                                 .setSubscription(subscription).addAckIds(received.getAckId()).build()));
                         System.out.println("Mensagem " + received.getMessage().getMessageId()
@@ -57,6 +61,7 @@ final class PollingOrders {
                         Thread.currentThread().interrupt();
                         throw e;
                     } catch (Exception e) {
+                        // Sem ACK, o Pub/Sub pode reenviar; o UUID impede uma segunda insercao.
                         System.err.println("Mensagem " + received.getMessage().getMessageId()
                                 + (saved ? ": salva, mas ACK nao confirmado" : ": nao salva")
                                 + " (" + e.getClass().getSimpleName() + "). Pode ser entregue novamente.");
@@ -68,6 +73,7 @@ final class PollingOrders {
     }
 
     private static <T> T await(com.google.api.core.ApiFuture<T> future) throws Exception {
+        // Evita que uma chamada assincrona deixe o consumidor bloqueado indefinidamente.
         try { return future.get(20, java.util.concurrent.TimeUnit.SECONDS); }
         catch (java.util.concurrent.TimeoutException | InterruptedException e) {
             future.cancel(true);

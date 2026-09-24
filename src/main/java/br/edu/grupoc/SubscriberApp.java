@@ -32,6 +32,7 @@ public final class SubscriberApp {
             System.exit(1);
         } catch (Exception e) {
             // Nao imprime credenciais ou respostas de autenticacao.
+            // Tambem omite detalhes sensiveis da excecao e mostra apenas seu tipo.
             System.err.println("Falha (" + e.getClass().getSimpleName()
                     + "). Verifique a credencial, a rede e as permissoes.");
             System.exit(1);
@@ -39,6 +40,7 @@ public final class SubscriberApp {
     }
 
     private static void run(String[] args) throws Exception {
+        // Os comandos da API e do banco possuem seus proprios fluxos de execucao.
         if (args.length == 1 && args[0].equals("--api")) {
             OrdersApi.run();
             return;
@@ -47,6 +49,7 @@ public final class SubscriberApp {
             OrderConsumer.run(args[0], java.util.Arrays.copyOfRange(args, 1, args.length));
             return;
         }
+        // Sem --receber, o comportamento seguro e apenas conferir a permissao IAM.
         boolean receive = false;
         boolean acknowledge = false;
         for (String arg : args) {
@@ -71,6 +74,7 @@ public final class SubscriberApp {
                 .setCredentialsProvider(FixedCredentialsProvider.create(credentials)).build();
         try (SubscriptionAdminClient client = SubscriptionAdminClient.create(settings)) {
             if (!receive) {
+                // Testar a permissao nao retira mensagens da assinatura.
                 var result = await(client.testIamPermissionsCallable().futureCall(
                         TestIamPermissionsRequest.newBuilder().setResource(SUBSCRIPTION)
                                 .addPermissions(PERMISSION).build()));
@@ -84,6 +88,7 @@ public final class SubscriberApp {
 
             PullResponse response;
             try {
+                // Limita cada leitura a dez mensagens para manter a saida controlada.
                 response = await(client.pullCallable().futureCall(PullRequest.newBuilder()
                         .setSubscription(SUBSCRIPTION).setMaxMessages(10).build()));
             } catch (TimeoutException e) {
@@ -105,15 +110,18 @@ public final class SubscriberApp {
                 ids.add(received.getAckId());
             }
             System.out.flush();
+            // Nao confirma mensagens que talvez nao tenham sido exibidas ao usuario.
             if (System.out.checkError()) {
                 throw new IllegalStateException("Falha ao exibir mensagens");
             }
             if (acknowledge) {
+                // ACK remove as mensagens desta assinatura somente quando solicitado explicitamente.
                 await(client.acknowledgeCallable().futureCall(
                         com.google.pubsub.v1.AcknowledgeRequest.newBuilder()
                                 .setSubscription(SUBSCRIPTION).addAllAckIds(ids).build()));
                 System.out.println("\n" + ids.size() + " mensagem(ns) confirmada(s).");
             } else {
+                // Prazo zero libera imediatamente as mensagens para uma nova entrega.
                 await(client.modifyAckDeadlineCallable().futureCall(
                         com.google.pubsub.v1.ModifyAckDeadlineRequest.newBuilder()
                                 .setSubscription(SUBSCRIPTION).addAllAckIds(ids)
@@ -124,6 +132,7 @@ public final class SubscriberApp {
     }
 
     private static <T> T await(ApiFuture<T> future) throws Exception {
+        // Cancela chamadas demoradas e preserva o sinal de interrupcao da thread.
         try {
             return future.get(25, TimeUnit.SECONDS);
         } catch (TimeoutException | InterruptedException e) {

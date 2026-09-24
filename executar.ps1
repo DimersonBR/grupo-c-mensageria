@@ -13,6 +13,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 
+# Le a versao pelo arquivo release para nao depender do Java que estiver primeiro no PATH.
 function Get-JdkMajor([string]$jdkPath) {
     if (-not $jdkPath) { return 0 }
     if (-not (Test-Path -LiteralPath (Join-Path $jdkPath 'bin\javac.exe'))) { return 0 }
@@ -27,6 +28,7 @@ function Get-JdkMajor([string]$jdkPath) {
     return 0
 }
 
+# Procura instalacoes conhecidas e escolhe o JDK compativel mais recente.
 function Find-Jdk {
     $candidates = New-Object System.Collections.Generic.List[string]
     Get-ChildItem -Path "$PSScriptRoot\.tools\jdk" -Directory -ErrorAction SilentlyContinue |
@@ -64,6 +66,7 @@ Instale o JDK 17+ (https://adoptium.net) ou aponte JAVA_HOME para a pasta do JDK
     return @{ Path = $melhor; Version = $melhorVersao }
 }
 
+# Prioriza o Maven local, depois o wrapper do projeto e por ultimo a instalacao global.
 function Find-Maven {
     $local = Get-ChildItem -Path "$PSScriptRoot\.tools" -Directory -Filter 'apache-maven-*' -ErrorAction SilentlyContinue |
         Select-Object -First 1
@@ -94,6 +97,7 @@ Uso: .\executar.ps1 [opcao]
 
 Push-Location $PSScriptRoot
 try {
+    # Executa sempre com um JDK 17+ encontrado pelo proprio script.
     $jdk = Find-Jdk
     $env:JAVA_HOME = $jdk.Path
     $env:PATH = "$($jdk.Path)\bin;$env:PATH"
@@ -101,6 +105,7 @@ try {
 
     $maven = Find-Maven
     $mavenArgs = @('-B')
+    # Reaproveita o repositorio Maven local do projeto quando ele existir.
     if (Test-Path -LiteralPath "$PSScriptRoot\.tools\m2") { $mavenArgs += "-Dmaven.repo.local=$PSScriptRoot\.tools\m2" }
 
     if ($Testar) {
@@ -110,6 +115,7 @@ try {
     }
 
     $appArgs = @()
+    # Converte as opcoes amigaveis do PowerShell nos argumentos aceitos pela aplicacao Java.
     if ($Api) { $appArgs += '--api' }
     if ($Receber) { $appArgs += '--receber' }
     if ($Confirmar) { $appArgs += '--confirmar' }

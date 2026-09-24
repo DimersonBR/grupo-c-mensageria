@@ -9,6 +9,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Random;
 
+/** Gera pedidos ficticios reproduziveis para demonstracao e testes locais. */
 final class SeedOrders {
     private SeedOrders() { }
 
@@ -46,7 +47,9 @@ final class SeedOrders {
     private static final List<String> CARRIERS = List.of("Correios", "Jadlog", "Loggi");
 
     static void run(OrderRepository repository, int quantity, long seed) throws Exception {
+        // A mesma semente repete escolhas e UUIDs, permitindo executar o comando sem duplicar dados.
         Random random = new Random(seed);
+        // Distribui as datas geradas dentro dos ultimos 90 dias.
         OffsetDateTime start = OffsetDateTime.now(ZoneOffset.UTC).minusDays(90).withNano(0);
         int inserted = 0;
         for (int index = 1; index <= quantity; index++) {
@@ -85,6 +88,7 @@ final class SeedOrders {
         JsonArray items = new JsonArray();
         int total = 1 + random.nextInt(3);
         for (int item = 1; item <= total; item++) {
+            // O indice alterna os produtos, enquanto os demais campos usam a semente informada.
             items.add(item(random, PRODUCTS.get((index + item) % PRODUCTS.size()), item));
         }
         order.add("items", items);
@@ -112,6 +116,7 @@ final class SeedOrders {
     }
 
     private static JsonObject item(Random random, Product product, int id) {
+        // Aplica uma variacao de 90% a 110% sobre o preco base do catalogo.
         BigDecimal discount = BigDecimal.valueOf(90 + random.nextInt(21)).divide(BigDecimal.valueOf(100));
         BigDecimal price = new BigDecimal(product.price()).multiply(discount).setScale(2, RoundingMode.HALF_UP);
 

@@ -15,6 +15,7 @@ final class OrderQueries {
 
     private Connection connect() throws SQLException {
         var connection = DriverManager.getConnection(url, "sa", "");
+        // A pagina e sua contagem devem enxergar o mesmo estado do banco.
         connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
         connection.setAutoCommit(false);
         return connection;
@@ -25,6 +26,7 @@ final class OrderQueries {
     }
 
     JsonObject page(Map<String,String> filters, int page, int size, String sort, Instant start, Instant end) throws SQLException {
+        // O mesmo filtro alimenta tanto a contagem total quanto a consulta paginada.
         Filter where = filter(filters, start, end);
         try (var connection = connect()) {
             long count;
@@ -34,6 +36,7 @@ final class OrderQueries {
             List<Object> parameters = new ArrayList<>(where.values);
             parameters.add(size); parameters.add(((long) page - 1) * size);
             JsonArray data = new JsonArray();
+            // O UUID desempata pedidos com a mesma data e mantem a paginacao estavel.
             try (var statement = prepare(connection, "SELECT p.uuid,p.payload FROM pedido p" + where.sql
                     + " ORDER BY p.criado_em " + direction + ",p.uuid ASC LIMIT ? OFFSET ?", parameters);
                  var rows = statement.executeQuery()) {
@@ -57,6 +60,8 @@ final class OrderQueries {
     }
 
     private JsonObject hydrate(Connection connection, String uuid, String payload) throws SQLException {
+        // O payload preserva os campos originais; valores financeiros sao recalculados
+        // com as colunas relacionais, que sao a fonte de verdade para as consultas.
         JsonObject order = JsonParser.parseString(payload).getAsJsonObject();
         Map<String,JsonObject> items = new HashMap<>();
         for (var item : order.getAsJsonArray("items")) items.put(item.getAsJsonObject().get("id").getAsString(), item.getAsJsonObject());
@@ -113,12 +118,14 @@ final class OrderQueries {
     private Filter filter(Map<String,String> filters, Instant start, Instant end) {
         StringBuilder sql = new StringBuilder(" WHERE 1=1");
         List<Object> values = new ArrayList<>();
+        // Somente chaves conhecidas podem virar colunas; os valores continuam parametrizados.
         for (var entry : Map.of("customer.id","p.cliente_id","seller.id","p.seller_id","status","p.status").entrySet()) {
             if (filters.containsKey(entry.getKey())) {
                 sql.append(" AND ").append(entry.getValue()).append("=?"); values.add(filters.get(entry.getKey()));
             }
         }
         if (filters.containsKey("product.id")) {
+            // EXISTS filtra pelo produto sem multiplicar um pedido que contenha varios itens.
             sql.append(" AND EXISTS (SELECT 1 FROM item_pedido f WHERE f.pedido_uuid=p.uuid AND f.produto_id=?)");
             values.add(filters.get("product.id"));
         }
@@ -127,6 +134,7 @@ final class OrderQueries {
         return new Filter(sql.toString(),values);
     }
     private PreparedStatement prepare(Connection connection,String sql,List<?> values) throws SQLException {
+        // PreparedStatement separa os dados do SQL e evita injecao pelos filtros da API.
         var statement = connection.prepareStatement(sql);
         try {
             for (int i=0;i<values.size();i++) statement.setObject(i+1,values.get(i));

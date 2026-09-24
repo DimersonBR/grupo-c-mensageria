@@ -19,11 +19,13 @@ import java.util.concurrent.ExecutorService;
 public final class OrdersApi implements AutoCloseable {
     private final String databaseUrl;
     private final HttpServer server;
+    // Um conjunto limitado de threads impede a criacao ilimitada de workers sob carga.
     private final ExecutorService executor = Executors.newFixedThreadPool(4);
     private static final Gson JSON = new GsonBuilder().serializeNulls().create();
 
     public OrdersApi(String databaseUrl, int port) throws IOException {
         this.databaseUrl = databaseUrl;
+        // A API escuta somente na maquina local; porta zero e util para testes.
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
         server.setExecutor(executor);
         server.createContext("/", this::handle);
@@ -39,6 +41,7 @@ public final class OrdersApi implements AutoCloseable {
         try (var repository = new OrderRepository(url)) {
             int port = Integer.parseInt(System.getenv().getOrDefault("ORDERS_API_PORT", "8080"));
             var api = new OrdersApi(url, port);
+            // Garante que servidor e executor sejam encerrados ao receber Ctrl+C.
             Runtime.getRuntime().addShutdownHook(new Thread(api::close));
             api.start();
             System.out.println("API disponivel em http://127.0.0.1:" + api.port() + "/orders. Ctrl+C para parar.");
@@ -48,6 +51,7 @@ public final class OrdersApi implements AutoCloseable {
 
     private void handle(HttpExchange exchange) throws IOException {
         try {
+            // Todas as rotas desta API sao somente de leitura.
             if (!exchange.getRequestMethod().equals("GET")) {
                 exchange.getResponseHeaders().set("Allow", "GET");
                 send(exchange, 405, error("method_not_allowed", "Use GET.")); return;
@@ -56,6 +60,7 @@ public final class OrdersApi implements AutoCloseable {
             Map<String, String> query = parameters(exchange.getRequestURI().getRawQuery());
             if (path.equals("/orders") || path.equals("/orders/financial-summary")) {
                 boolean summary = path.endsWith("financial-summary");
+                // Cada rota possui sua propria lista branca de parametros.
                 Set<String> allowed = summary
                         ? Set.of("seller.id", "start_date", "end_date")
                         : Set.of("customer.id", "product.id", "seller.id", "status", "start_date", "end_date",
@@ -77,6 +82,7 @@ public final class OrdersApi implements AutoCloseable {
                 return;
             }
             String[] parts = path.split("/", -1);
+            // Reconhece /orders/{uuid} e /orders/{uuid}/items sem um framework externo.
             if ((parts.length == 3 || (parts.length == 4 && parts[3].equals("items")))
                     && parts[1].equals("orders") && !parts[2].isBlank()) {
                 if (!query.isEmpty()) throw new IllegalArgumentException("Esta rota nao aceita parametros.");
@@ -102,6 +108,7 @@ public final class OrdersApi implements AutoCloseable {
         try {
             if (value.matches("\\d{4}-\\d{2}-\\d{2}")) {
                 Instant day = LocalDate.parse(value).atStartOfDay(ZoneOffset.UTC).toInstant();
+                // Uma data final sem horario inclui ate o ultimo nanossegundo daquele dia.
                 return end ? day.plus(Duration.ofDays(1)).minusNanos(1) : day;
             }
             return OffsetDateTime.parse(value).toInstant();
@@ -119,6 +126,7 @@ public final class OrdersApi implements AutoCloseable {
     private static Map<String, String> parameters(String raw) {
         Map<String, String> result = new HashMap<>();
         if (raw == null || raw.isEmpty()) return result;
+        // putIfAbsent tambem detecta chaves repetidas, evitando interpretacoes ambiguas.
         for (String pair : raw.split("&")) {
             String[] parts = pair.split("=", 2);
             String key = URLDecoder.decode(parts[0], StandardCharsets.UTF_8);
@@ -133,6 +141,7 @@ public final class OrdersApi implements AutoCloseable {
     }
     private static void send(HttpExchange exchange, int status, JsonElement body) throws IOException {
         byte[] bytes = JSON.toJson(body).getBytes(StandardCharsets.UTF_8);
+        // Respostas de consulta nao ficam armazenadas pelo navegador ou por proxies locais.
         exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
         exchange.getResponseHeaders().set("Cache-Control", "no-store");
         exchange.sendResponseHeaders(status, bytes.length);

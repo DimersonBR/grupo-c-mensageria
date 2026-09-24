@@ -1,3 +1,4 @@
+-- Entidades compartilhadas por varios pedidos.
 CREATE TABLE IF NOT EXISTS cliente (
  id VARCHAR(100) PRIMARY KEY, nome VARCHAR(500) NOT NULL,
  email VARCHAR(500) NOT NULL, documento VARCHAR(100) NOT NULL
@@ -5,6 +6,7 @@ CREATE TABLE IF NOT EXISTS cliente (
 CREATE TABLE IF NOT EXISTS produto (
  id VARCHAR(100) PRIMARY KEY, titulo VARCHAR(500) NOT NULL
 );
+-- O payload original e mantido para reconstruir a mensagem completa na API.
 CREATE TABLE IF NOT EXISTS pedido (
  uuid VARCHAR(100) PRIMARY KEY,
  cliente_id VARCHAR(100) NOT NULL REFERENCES cliente(id),
@@ -13,6 +15,7 @@ CREATE TABLE IF NOT EXISTS pedido (
  canal VARCHAR(100) NOT NULL, status VARCHAR(100) NOT NULL,
  payload CLOB NOT NULL
 );
+-- Itens ficam normalizados para calculos financeiros e filtros por produto.
 CREATE TABLE IF NOT EXISTS item_pedido (
  pedido_uuid VARCHAR(100) NOT NULL REFERENCES pedido(uuid),
  id VARCHAR(100) NOT NULL,
@@ -23,9 +26,11 @@ CREATE TABLE IF NOT EXISTS item_pedido (
  subcategoria_id VARCHAR(100), subcategoria_nome VARCHAR(500),
  PRIMARY KEY (pedido_uuid, id)
 );
+-- Colunas adicionadas de forma idempotente para atualizar bancos criados por versoes antigas.
 ALTER TABLE pedido ADD COLUMN IF NOT EXISTS seller_id VARCHAR(100);
 ALTER TABLE pedido ADD COLUMN IF NOT EXISTS payment_method VARCHAR(100);
 ALTER TABLE pedido ADD COLUMN IF NOT EXISTS projection_version INTEGER NOT NULL DEFAULT 0;
+-- Indices acompanham os filtros e a ordenacao utilizados pelas consultas da API.
 CREATE INDEX IF NOT EXISTS idx_pedido_data ON pedido(criado_em DESC, uuid);
 CREATE INDEX IF NOT EXISTS idx_pedido_cliente_data ON pedido(cliente_id, criado_em DESC, uuid);
 CREATE INDEX IF NOT EXISTS idx_pedido_seller_data ON pedido(seller_id, criado_em DESC, uuid);

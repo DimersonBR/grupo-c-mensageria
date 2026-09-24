@@ -13,6 +13,7 @@ public final class OrderRepository implements AutoCloseable {
 
     public OrderRepository(String url) throws Exception {
         connection = DriverManager.getConnection(url, "sa", "");
+        // O schema usa comandos idempotentes, portanto pode ser aplicado em toda abertura.
         try (var stream = getClass().getResourceAsStream("/schema.sql")) {
             if (stream == null) throw new IllegalStateException("schema.sql ausente");
             String schema = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
@@ -27,6 +28,7 @@ public final class OrderRepository implements AutoCloseable {
     }
 
     public synchronized boolean save(String payload) throws Exception {
+        // Toda a estrutura obrigatoria e validada antes do inicio da transacao.
         JsonObject order = JsonParser.parseString(payload).getAsJsonObject();
         String uuid = text(order, "uuid");
         JsonObject customer = order.getAsJsonObject("customer");
@@ -50,14 +52,17 @@ public final class OrderRepository implements AutoCloseable {
         }
         connection.setAutoCommit(false);
         try {
+            // O UUID torna o consumo idempotente caso o Pub/Sub entregue a mensagem novamente.
             try (var query = connection.prepareStatement("SELECT uuid FROM pedido WHERE uuid = ?")) {
                 query.setString(1, uuid);
                 try (var rows = query.executeQuery()) {
                     if (rows.next()) { connection.rollback(); return false; }
                 }
             }
+            // MERGE atualiza dimensoes compartilhadas sem criar clientes ou produtos duplicados.
             execute("MERGE INTO cliente (id,nome,email,documento) KEY(id) VALUES (?,?,?,?)",
                     customerId, name, email, document);
+            // O JSON original e preservado, enquanto campos consultados com frequencia sao projetados em colunas.
             execute("INSERT INTO pedido (uuid,cliente_id,criado_em,canal,status,payload,seller_id,payment_method,projection_version) VALUES (?,?,?,?,?,?,?,?,1)",
                     uuid, customerId, created, channel, status, payload,
                     optional(order.getAsJsonObject("seller"), "id"), optional(order.getAsJsonObject("payment"), "method"));
@@ -75,6 +80,7 @@ public final class OrderRepository implements AutoCloseable {
             connection.commit();
             return true;
         } catch (Exception e) {
+            // Nenhuma parte do pedido permanece gravada se qualquer item falhar.
             connection.rollback();
             throw e;
         } finally {
@@ -90,6 +96,7 @@ public final class OrderRepository implements AutoCloseable {
     }
 
     private void migrateProjections() throws SQLException {
+        // Pedidos antigos recebem apenas as novas colunas derivadas; payload e datas nao mudam.
         connection.setAutoCommit(false);
         try (var select = connection.prepareStatement("SELECT uuid,payload FROM pedido WHERE projection_version=0");
              var rows = select.executeQuery()) {
@@ -106,6 +113,7 @@ public final class OrderRepository implements AutoCloseable {
     }
 
     private static String text(JsonObject object, String key) {
+        // Centraliza a validacao dos campos obrigatorios do contrato da mensagem.
         String value = optional(object, key);
         if (value == null || value.isBlank()) throw new IllegalArgumentException("Campo obrigatorio: " + key);
         return value;
@@ -116,6 +124,7 @@ public final class OrderRepository implements AutoCloseable {
     }
 
     public synchronized void list() throws SQLException {
+        // A sincronizacao protege a unica conexao mantida por este repositorio.
         try (var statement = connection.createStatement(); var rows = statement.executeQuery(
                 "SELECT p.uuid,p.status,p.indexado_em,COUNT(i.id) itens,SUM(i.preco_unitario*i.quantidade) total "
                 + "FROM pedido p JOIN item_pedido i ON p.uuid=i.pedido_uuid GROUP BY p.uuid ORDER BY p.indexado_em")) {
